@@ -1,8 +1,8 @@
-use crate::day_one::solve;
-
-mod read_file;
 mod day_one;
+mod day_two;
+mod read_file;
 
 fn main() {
-    solve();
+    //day_one::solve();
+    day_two::solve();
 }

@@ -1,6 +1,7 @@
+#[allow(dead_code)]
+use crate::read_file::read_lines;
 use std::fs::File;
 use std::io::{BufReader, Lines};
-use crate::read_file::read_lines;
 
 pub fn solve() {
     part_one();
@@ -25,12 +26,19 @@ fn part_two() {
 
     let mut top_three = vec![];
     while top_three.len() < 3 {
-        top_three.push(totals.remove(totals.iter().position(|x| x == totals.iter().max().unwrap()).unwrap()));
+        top_three.push(
+            totals.remove(
+                totals
+                    .iter()
+                    .position(|x| x == totals.iter().max().unwrap())
+                    .unwrap(),
+            ),
+        );
     }
     println!("Part two: {:?}", top_three.iter().sum::<i32>());
 }
 
-fn parse(mut totals: &mut Vec<i32>, mut total: i32, lines: Lines<BufReader<File>>) {
+fn parse(totals: &mut Vec<i32>, mut total: i32, lines: Lines<BufReader<File>>) {
     lines.flatten().for_each(|line| {
         if let Ok(v) = line.parse::<i32>() {
             total += v;
