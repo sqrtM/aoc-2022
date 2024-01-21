@@ -18,7 +18,7 @@ pub fn solve() {
                 command_regex
                     .captures_iter(&line)
                     .map(|y| y.extract::<1>())
-                    .for_each(|z| commands.push(z.0.parse::<u8>().unwrap()));
+                    .for_each(|z| commands.push(z.0.parse::<usize>().unwrap()));
                 assert_eq!(commands.len(), 3);
                 all_commands.push(commands);
             } else {
@@ -73,7 +73,7 @@ fn parse_stack(stack_input: &str) -> Vec<Vec<Block>> {
 }
 
 fn execute_commands<'a>(
-    cmds: &'a [Vec<u8>],
+    cmds: &'a [Vec<usize>],
     stk: &'a [Vec<Block>],
     part_two: bool,
 ) -> Vec<Vec<Block<'a>>> {
@@ -81,17 +81,15 @@ fn execute_commands<'a>(
 
     cmds.iter().for_each(|cmd| {
         let mut blocks = vec![];
-        for _ in return_vec[cmd[1] as usize - 1].len() - cmd[0] as usize
-            ..return_vec[cmd[1] as usize - 1].len()
-        {
-            blocks.push(return_vec[cmd[1] as usize - 1].pop().unwrap());
+        for _ in return_vec[cmd[1] - 1].len() - cmd[0]..return_vec[cmd[1] - 1].len() {
+            blocks.push(return_vec[cmd[1] - 1].pop().unwrap());
         }
 
         if part_two {
             blocks.reverse();
         }
 
-        return_vec[cmd[2] as usize - 1].extend(blocks);
+        return_vec[cmd[2] - 1].extend(blocks);
     });
 
     return_vec
@@ -101,7 +99,7 @@ fn get_top_of_stacks<'a>(stks: &'a [Vec<Block>]) -> Vec<Block<'a>> {
     stks.iter().map(|stk| *stk.last().unwrap()).collect()
 }
 
-fn part_one(stacks: &[Vec<Block>], cmds: &[Vec<u8>]) {
+fn part_one(stacks: &[Vec<Block>], cmds: &[Vec<usize>]) {
     let final_stack = execute_commands(cmds, stacks, false);
     println!(
         "Part one: {:?}",
@@ -112,7 +110,7 @@ fn part_one(stacks: &[Vec<Block>], cmds: &[Vec<u8>]) {
     );
 }
 
-fn part_two(stacks: &[Vec<Block>], cmds: &[Vec<u8>]) {
+fn part_two(stacks: &[Vec<Block>], cmds: &[Vec<usize>]) {
     let final_stack = execute_commands(cmds, stacks, true);
     println!(
         "Part two: {:?}",
