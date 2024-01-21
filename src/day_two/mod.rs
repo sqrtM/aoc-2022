@@ -25,19 +25,19 @@ impl Hand {
     fn determine_winner(them: &Hand, me: Hand) -> Outcome {
         match them {
             Hand::Rock => match me {
-                Hand::Rock => Outcome::Draw(them.clone()),
-                Hand::Paper => Outcome::Lose(them.clone()),
-                Hand::Scissors => Outcome::Win(them.clone()),
+                Hand::Rock => Outcome::Draw(*them),
+                Hand::Paper => Outcome::Lose(*them),
+                Hand::Scissors => Outcome::Win(*them),
             },
             Hand::Paper => match me {
-                Hand::Rock => Outcome::Win(them.clone()),
-                Hand::Paper => Outcome::Draw(them.clone()),
-                Hand::Scissors => Outcome::Lose(them.clone()),
+                Hand::Rock => Outcome::Win(*them),
+                Hand::Paper => Outcome::Draw(*them),
+                Hand::Scissors => Outcome::Lose(*them),
             },
             Hand::Scissors => match me {
-                Hand::Rock => Outcome::Lose(them.clone()),
-                Hand::Paper => Outcome::Win(them.clone()),
-                Hand::Scissors => Outcome::Draw(them.clone()),
+                Hand::Rock => Outcome::Lose(*them),
+                Hand::Paper => Outcome::Win(*them),
+                Hand::Scissors => Outcome::Draw(*them),
             },
         }
     }
@@ -106,7 +106,7 @@ fn part_one() {
             .flatten()
             .map(|line| {
                 line.split_whitespace()
-                    .map(|str| Hand::from_str_part_one(str))
+                    .map(Hand::from_str_part_one)
                     .collect::<Vec<Hand>>()
                     .chunks(2)
                     .map(|a| Hand::determine_winner(&a[1], a[0]))
@@ -126,7 +126,7 @@ fn part_two() {
                 line.split_whitespace()
                     .collect::<Vec<&str>>()
                     .chunks(2)
-                    .map(|str| Hand::from_str_part_two(str))
+                    .map(Hand::from_str_part_two)
                     .map(|o| o.score_match())
                     .sum::<u32>()
             })
