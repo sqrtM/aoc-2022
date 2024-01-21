@@ -1,28 +1,38 @@
+#![allow(dead_code)]
+
 use crate::read_file::read_lines;
 use regex::Regex;
-use std::fs::File;
-use std::io::{BufReader, Lines};
 
 pub fn solve() {
-    let mut stacks = vec![];
-    let mut stack_input: String = "".to_string();
+    let mut stack_input: String = String::new();
+    let mut all_commands = Vec::new();
+    let command_regex = Regex::new(r"(?m)\b(\d{1,3})\b").unwrap();
+
     if let Ok(lines) = read_lines("src/day_five/input.txt") {
+        let mut parsing_stack = true;
         for line in lines.flatten() {
             if line.is_empty() {
-                break;
+                parsing_stack = false;
+            } else if !parsing_stack {
+                let mut commands = vec![];
+                command_regex
+                    .captures_iter(&line)
+                    .map(|y| y.extract::<1>())
+                    .for_each(|z| commands.push(z.0.parse::<u8>().unwrap()));
+                assert_eq!(commands.len(), 3);
+                all_commands.push(commands);
             } else {
-                stack_input.push_str(&line);
+                stack_input.push_str(&format!("{}\n", &line));
             }
-            stack_input.push('\n');
         }
-        stacks = parse_stack(&stack_input);
     }
+    let stack = parse_stack(&stack_input);
 
-    //part_one(&stacks, stack_input.lines().count());
-    part_two(&stacks, stack_input.lines().count());
+    part_one(&stack, &all_commands);
+    part_two(&stack, &all_commands);
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone)]
 struct Block<'a>(&'a str);
 
 impl<'a> Block<'a> {
@@ -35,8 +45,6 @@ impl<'a> Block<'a> {
 }
 
 fn parse_stack(stack_input: &str) -> Vec<Vec<Block>> {
-    let regex = Regex::new(r"(?m)(?P<space> {3,4})|(?P<block>\[(?P<char>([A-Z]))])").unwrap();
-
     let mut stacks: Vec<Vec<Block>> = vec![
         vec![];
         stack_input
@@ -48,8 +56,13 @@ fn parse_stack(stack_input: &str) -> Vec<Vec<Block>> {
             .to_digit(10)
             .unwrap() as usize
     ];
+
     for line in stack_input.lines().rev().skip(1) {
-        for (j, captures) in regex.captures_iter(line).enumerate() {
+        for (j, captures) in Regex::new(r"(?m)(?P<space> {3,4})|(?P<block>\[(?P<char>([A-Z]))])")
+            .unwrap()
+            .captures_iter(line)
+            .enumerate()
+        {
             if captures.name("block").is_some() {
                 stacks[j].push(Block::new(captures.name("char").unwrap().as_str()));
             }
@@ -59,90 +72,53 @@ fn parse_stack(stack_input: &str) -> Vec<Vec<Block>> {
     stacks
 }
 
-fn execute_commands_one<'a>(cmds: &'a [Vec<u8>], stk: &'a [Vec<Block>]) -> Vec<Vec<Block<'a>>> {
+fn execute_commands<'a>(
+    cmds: &'a [Vec<u8>],
+    stk: &'a [Vec<Block>],
+    part_two: bool,
+) -> Vec<Vec<Block<'a>>> {
     let mut return_vec = stk.to_owned();
 
-    cmds.iter().skip(1).for_each(|cmd| {
+    cmds.iter().for_each(|cmd| {
         let mut blocks = vec![];
-
         for _ in return_vec[cmd[1] as usize - 1].len() - cmd[0] as usize
             ..return_vec[cmd[1] as usize - 1].len()
         {
             blocks.push(return_vec[cmd[1] as usize - 1].pop().unwrap());
         }
 
-        for item in blocks {
-            return_vec[cmd[2] as usize - 1].push(item)
+        if part_two {
+            blocks.reverse();
         }
+
+        return_vec[cmd[2] as usize - 1].extend(blocks);
     });
-    return_vec
-}
 
-fn execute_commands_two<'a>(cmds: &'a [Vec<u8>], stk: &'a [Vec<Block>]) -> Vec<Vec<Block<'a>>> {
-    let mut return_vec = stk.to_owned();
-
-    cmds.iter().skip(1).for_each(|cmd| {
-        let mut blocks = vec![];
-
-        for _ in return_vec[cmd[1] as usize - 1].len() - cmd[0] as usize
-            ..return_vec[cmd[1] as usize - 1].len()
-        {
-            blocks.push(return_vec[cmd[1] as usize - 1].pop().unwrap());
-        }
-
-        for item in blocks.iter().rev() {
-            return_vec[cmd[2] as usize - 1].push(*item)
-        }
-    });
     return_vec
 }
 
 fn get_top_of_stacks<'a>(stks: &'a [Vec<Block>]) -> Vec<Block<'a>> {
-    let mut tops = vec![];
-    for stk in stks {
-        tops.push(*stk.last().unwrap());
-    }
-    tops
+    stks.iter().map(|stk| *stk.last().unwrap()).collect()
 }
 
-fn extract_commands(stack_height: usize, lines: Lines<BufReader<File>>) -> Vec<Vec<u8>> {
-    let regex = Regex::new(r"(?m)\b(\d{1,3})\b").unwrap();
-    let mut all_commands = vec![];
-    lines.flatten().skip(stack_height).for_each(|x| {
-        let mut commands = vec![];
-        regex
-            .captures_iter(&x)
-            .map(|y| y.extract::<1>())
-            .for_each(|z| commands.push(z.0.parse::<u8>().unwrap()));
-        all_commands.push(commands);
-    });
-    all_commands
+fn part_one(stacks: &[Vec<Block>], cmds: &[Vec<u8>]) {
+    let final_stack = execute_commands(cmds, stacks, false);
+    println!(
+        "Part one: {:?}",
+        get_top_of_stacks(&final_stack)
+            .iter()
+            .map(|b| b.get_str())
+            .collect::<String>()
+    );
 }
 
-fn part_one(stacks: &[Vec<Block>], stack_height: usize) {
-    if let Ok(lines) = read_lines("src/day_five/input.txt") {
-        let all_commands = extract_commands(stack_height, lines);
-        let final_stack = execute_commands_one(&all_commands, stacks);
-        println!(
-            "Part one: {:?}",
-            get_top_of_stacks(&final_stack)
-                .iter()
-                .map(|b| b.get_str())
-                .collect::<String>()
-        );
-    }
-}
-
-fn part_two(stacks: &[Vec<Block>], stack_height: usize) {
-    if let Ok(lines) = read_lines("src/day_five/input.txt") {
-        let all_commands = extract_commands(stack_height, lines);
-        let final_stack = execute_commands_two(&all_commands, stacks);
-        println!(
-            "Part two: {:?}",
-            get_top_of_stacks(&final_stack)
-                .iter()
-                .map(|b| b.get_str())
-                .collect::<String>()
-        );
-    }
+fn part_two(stacks: &[Vec<Block>], cmds: &[Vec<u8>]) {
+    let final_stack = execute_commands(cmds, stacks, true);
+    println!(
+        "Part two: {:?}",
+        get_top_of_stacks(&final_stack)
+            .iter()
+            .map(|b| b.get_str())
+            .collect::<String>()
+    );
 }

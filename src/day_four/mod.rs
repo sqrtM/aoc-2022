@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+#![allow(dead_code)]
 
 use crate::read_file::read_lines;
 use std::ops::RangeInclusive;
